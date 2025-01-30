@@ -1,0 +1,42 @@
+name: Deploy Spring Boot to EC2
+
+on:
+  push:
+    branches:
+      - main  # Deploy only on main branch updates
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'  # Latest OpenJDK
+          java-version: '17'
+
+      - name: Build Spring Boot JAR
+        run: mvn clean package -DskipTests
+
+      - name: Transfer JAR to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          source: "target/*.jar"
+          target: "/home/${{ secrets.AWS_USER }}/app"
+
+      - name: Restart Spring Boot Application
+        uses: appleboy/ssh-action@v0.1.4
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          script: |
+            sudo pkill -f "java -jar" || true
+            nohup java -jar /home/${{ secrets.AWS_USER }}/app/*.jar > app.log 2>&1 &
