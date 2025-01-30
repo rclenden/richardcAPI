@@ -15,6 +15,7 @@ jobs:
           echo "${{ secrets.AWS_SSH_KEY }}" > private_key.pem
           chmod 600 private_key.pem
           ssh -v -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }} "echo SSH connection successful"
+     
       - name: Checkout Repository
         uses: actions/checkout@v3
 
